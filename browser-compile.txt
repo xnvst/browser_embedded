@@ -1,0 +1,1511 @@
+
+Sitara boot:
+
+nand unlock
+ethersw on
+tftp 0x80800000 browser.img
+
+
+bootargs = console=ttyO2,115200n8 rootwait root=/dev/mmcblk0p2 rw mem=364M@0x80000000 mem=320M@0x9FC00000 vmalloc=500M notifyk.vpssm3_sva=0xBF900000 ip=off noinitrd
+
+bootargs = console=ttyO2,115200n8 mem=364M@0x80000000 mem=320M@0x9FC00000 earlyprintk vmalloc=500M notifyk.vpssm3_sva=0xBF900000 vram=50M ti816xfb.vram=0:16M,1:16M,2:6M ip=off
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+Virtual machine mount:
+
+sudo mount -t vboxsf vmshare ~/vmshare-disk
+sudo mount /dev/sdb1 ~/new-disk
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+export PATH=/usr/lib/lightdm/lightdm:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games
+
+cd ~/new-disk/ezsdk505/linux-devkit/
+
+vim ./environment-setup:
+(4.3.3):	#export TOOLCHAIN_PATH=/opt/CodeSourcery/Sourcery_G++_Lite
+(4.8.3):	#export TOOLCHAIN_PATH=/home/ubuntu/new-disk/CodeSourcery
+
+source ./environment-setup
+
+make -f client.mk clean
+make -f client.mk configure
+make -f client.mk
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+vim /opt/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/bits/predefs.h
+
+-#ifndef _FEATURES_H
+-# error "Never use <bits/predefs.h> directly; include <features.h> instead."
++#ifndef _STDC_PREDEF_H
++# error "Never use <bits/predefs.h> directly; include <stdc-predef.h> instead."
+ #endif
+
+
+##
+ 
+[Patches] Update bits/predefs.h for stdc-predef.h changes
+
+    To: patches@xxxxxxxxxx
+    Subject: [Patches] Update bits/predefs.h for stdc-predef.h changes
+    From: "Joseph S. Myers" <joseph@xxxxxxxxxxxxxxxx>
+    Date: Thu, 8 Mar 2012 21:53:57 +0000 (UTC)
+
+I've applied this patch to update EGLIBC's bits/predefs.h headers to take 
+account of the possibility of the compiler preincluding stdc-predef.h 
+(which in turn includes bits/predefs.h) directly.  I took the opportunity 
+to remove ports/sysdeps/arm/bits/predefs.h, leaving only the EABI version 
+for ARM, since old-ABI ARM is no longer supported by glibc.
+
+Index: ports/sysdeps/arm/eabi/bits/predefs.h
+===================================================================
+--- ports/sysdeps/arm/eabi/bits/predefs.h	(revision 17472)
++++ ports/sysdeps/arm/eabi/bits/predefs.h	(revision 17473)
+@@ -16,8 +16,8 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
+-#ifndef _FEATURES_H
+-# error "Never use <bits/predefs.h> directly; include <features.h> instead."
++#ifndef _STDC_PREDEF_H
++# error "Never use <bits/predefs.h> directly; include <stdc-predef.h> instead."
+ #endif
+ 
+ #ifndef _PREDEFS_H
+Index: ports/sysdeps/arm/bits/predefs.h
+===================================================================
+--- ports/sysdeps/arm/bits/predefs.h	(revision 17472)
++++ ports/sysdeps/arm/bits/predefs.h	(revision 17473)
+@@ -1,30 +0,0 @@
+-/* Copyright (C) 2005 Free Software Foundation, Inc.
+-   This file is part of the GNU C Library.
+-
+-   The GNU C Library is free software; you can redistribute it and/or
+-   modify it under the terms of the GNU Lesser General Public
+-   License as published by the Free Software Foundation; either
+-   version 2.1 of the License, or (at your option) any later version.
+-
+-   The GNU C Library is distributed in the hope that it will be useful,
+-   but WITHOUT ANY WARRANTY; without even the implied warranty of
+-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+-   Lesser General Public License for more details.
+-
+-   You should have received a copy of the GNU Lesser General Public
+-   License along with the GNU C Library; if not, write to the Free
+-   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+-   02111-1307 USA.  */
+-
+-#ifndef _FEATURES_H
+-# error "Never use <bits/predefs.h> directly; include <features.h> instead."
+-#endif
+-
+-#ifndef _PREDEFS_H
+-#define _PREDEFS_H
+-
+-/* We do not define __STDC_IEC_559__ or __STDC_IEC_559_COMPLEX__, as
+-   the ARM software floating-point emulation routines do not support
+-   all rounding modes, etc.  */
+-
+-#endif /* predefs.h */
+Index: ports/ChangeLog.eglibc
+===================================================================
+--- ports/ChangeLog.eglibc	(revision 17472)
++++ ports/ChangeLog.eglibc	(revision 17473)
+@@ -1,3 +1,9 @@
++2012-03-08  Joseph Myers  <joseph@xxxxxxxxxxxxxxxx>
++
++	* sysdeps/arm/eabi/bits/predefs.h: Test _STDC_PREDEF_H, not
++	_FEATURES_H.
++	* sysdeps/arm/bits/predefs.h: Remove.
++
+ 2012-01-04  Tom de Vries  <tom@xxxxxxxxxxxxxxxx>
+ 
+ 	* sysdeps/mips/Makefile: Compile tst-backtrace{2,3,4,5,6} with
+Index: libc/bits/predefs.h
+===================================================================
+--- libc/bits/predefs.h	(revision 17472)
++++ libc/bits/predefs.h	(revision 17473)
+@@ -16,8 +16,8 @@
+    Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
+    02111-1307 USA.  */
+ 
+-#ifndef _FEATURES_H
+-# error "Never use <bits/predefs.h> directly; include <features.h> instead."
++#ifndef _STDC_PREDEF_H
++# error "Never use <bits/predefs.h> directly; include <stdc-predef.h> instead."
+ #endif
+ 
+ #ifndef _PREDEFS_H
+Index: libc/ChangeLog.eglibc
+===================================================================
+--- libc/ChangeLog.eglibc	(revision 17472)
++++ libc/ChangeLog.eglibc	(revision 17473)
+@@ -1,3 +1,7 @@
++2012-03-08  Joseph Myers  <joseph@xxxxxxxxxxxxxxxx>
++
++	* bits/predefs.h: Test _STDC_PREDEF_H, not _FEATURES_H.
++
+ 2012-02-10  Paul Pluzhnikov  <ppluzhnikov@xxxxxxxxxx>
+ 
+ 	* timezone/Makefile: Use BUILD_CC instead of 'gcc'.
+
+-- 
+Joseph S. Myers
+joseph@xxxxxxxxxxxxxxxx
+_______________________________________________
+Patches mailing list
+Patches@xxxxxxxxxx
+http://eglibc.org/cgi-bin/mailman/listinfo/patches
+ 
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+make -f client.mk clean
+make -f client.mk configure
+make -f client.mk
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+for svn:
+
+/etc/resolv.conf
+
+fcao@athena:/etc$ cat resolv.conf
+# Generated by NetworkManager
+domain burlington.evertz.tv
+search burlington.evertz.tv
+nameserver 192.168.1.225
+nameserver 192.168.1.123
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+firefox ver 22
+mozconfig-v22
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+# sh
+# Build configuration script
+#
+# See http://www.mozilla.org/build/unix.html for build instructions.
+#
+CROSS_COMPILE=1
+HOST_LIBIDL_CONFIG='/usr/bin/libIDL-config-2 --prefix=/usr'
+HOST_LIBIDL_CFLAGS='-I/usr/include/libIDL-2.0 -I/usr/include/glib-2.0 -I/usr/lib/glib-2.0/include'
+HOST_LIBIDL_LIBS='-L/usr/lib -lIDL-2 -lglib-2.0'
+LIBIDL_CONFIG='/usr/bin/libIDL-config-2 --prefix=/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi'
+export PKG_CONFIG_PATH=/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/pkgconfig
+
+# don't use pkg-config for host libIDL
+ac_add_options --without-libIDL
+ac_add_options --prefix=/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi
+ac_add_options --target=arm-none-linux-gnueabi
+
+# Options for 'configure' (same as command-line options). 
+# all are listed so that one can manually tweak this config file.
+ac_add_options --enable-application=browser
+#ac_add_options --enable-mathml
+#ac_add_options --enable-extensions
+#ac_add_options --enable-crypto
+ac_add_options --enable-logrefcnt
+
+ac_add_options --without-system-nspr
+#ac_add_options --without-system-zlib
+ac_add_options --without-system-jpeg
+ac_add_options --without-system-png
+
+
+#WXU added
+ac_add_options --disable-gstreamer
+ac_add_options --with-linux-headers=/home/ubuntu/new-disk/ezsdk505/board-support/linux-2.6.37-psp04.04.00.01/arch/arm
+ac_add_options --with-arch=armv7-a
+ac_add_options --with-fpu=neon
+ac_add_options --with-float-abi=softfp
+ac_add_options --with-system-zlib
+ac_add_options --with-maemo-version=6
+ac_add_options --disable-elf-hack
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+~/new-disk/CodeSourcery/arm-none-linux-gnueabi/libc/usr/lib/libz.so -> /home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/libz.so
+
+
+setup link files in CodeSourcery/arm-none-linux-gnueabi/libc/usr/include
+ezsdk505_include -> /home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/
+QString -> ezsdk505_include/qtopia/QtCore/QString
+qstring.h -> ezsdk505_include/qtopia/QtCore/qstring.h
+QtCore -> ezsdk505_include/qtopia/QtCore
+QUrl -> ezsdk505_include/qtopia/QtCore/QUrl
+qurl.h -> ezsdk505_include/qtopia/QtCore/qurl.h
+
+X11 -> ezsdk505_include/X11/
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+ubuntu@ubuntu-VirtualBox:~/new-disk/CodeSourcery$ arm-none-linux-gnueabi-gcc -v
+Using built-in specs.
+COLLECT_GCC=arm-none-linux-gnueabi-gcc
+COLLECT_LTO_WRAPPER=/opt/arm-2014.05/bin/../libexec/gcc/arm-none-linux-gnueabi/4.8.3/lto-wrapper
+Target: arm-none-linux-gnueabi
+Configured with: /scratch/maciej/arm-linux-2014.05-rel/src/gcc-4.8-2014.05/configure --build=i686-pc-linux-gnu --host=i686-pc-linux-gnu --target=arm-none-linux-gnueabi --enable-threads --disable-libmudflap --disable-libssp --disable-libstdcxx-pch --enable-extra-sgxxlite-multilibs --with-arch=armv5te --with-gnu-as --with-gnu-ld --with-specs='%{save-temps: -fverbose-asm} %{funwind-tables|fno-unwind-tables|mabi=*|ffreestanding|nostdlib:;:-funwind-tables} -D__CS_SOURCERYGXX_MAJ__=2014 -D__CS_SOURCERYGXX_MIN__=5 -D__CS_SOURCERYGXX_REV__=29' --enable-languages=c,c++ --enable-shared --enable-lto --enable-symvers=gnu --enable-__cxa_atexit --with-pkgversion='Sourcery CodeBench Lite 2014.05-29' --with-bugurl=https://sourcery.mentor.com/GNUToolchain/ --disable-nls --prefix=/opt/codesourcery --with-sysroot=/opt/codesourcery/arm-none-linux-gnueabi/libc --with-build-sysroot=/scratch/maciej/arm-linux-2014.05-rel/install/opt/codesourcery/arm-none-linux-gnueabi/libc --with-gmp=/scratch/maciej/arm-linux-2014.05-rel/obj/pkg-2014.05-29-arm-none-linux-gnueabi/arm-2014.05-29-arm-none-linux-gnueabi.extras/host-libs-i686-pc-linux-gnu/usr --with-mpfr=/scratch/maciej/arm-linux-2014.05-rel/obj/pkg-2014.05-29-arm-none-linux-gnueabi/arm-2014.05-29-arm-none-linux-gnueabi.extras/host-libs-i686-pc-linux-gnu/usr --with-mpc=/scratch/maciej/arm-linux-2014.05-rel/obj/pkg-2014.05-29-arm-none-linux-gnueabi/arm-2014.05-29-arm-none-linux-gnueabi.extras/host-libs-i686-pc-linux-gnu/usr --with-isl=/scratch/maciej/arm-linux-2014.05-rel/obj/pkg-2014.05-29-arm-none-linux-gnueabi/arm-2014.05-29-arm-none-linux-gnueabi.extras/host-libs-i686-pc-linux-gnu/usr --with-cloog=/scratch/maciej/arm-linux-2014.05-rel/obj/pkg-2014.05-29-arm-none-linux-gnueabi/arm-2014.05-29-arm-none-linux-gnueabi.extras/host-libs-i686-pc-linux-gnu/usr --disable-libgomp --disable-libitm --enable-libatomic --disable-libssp --enable-poison-system-directories --with-build-time-tools=/scratch/maciej/arm-linux-2014.05-rel/install/opt/codesourcery/arm-none-linux-gnueabi/bin --with-build-time-tools=/scratch/maciej/arm-linux-2014.05-rel/install/opt/codesourcery/arm-none-linux-gnueabi/bin SED=sed
+Thread model: posix
+gcc version 4.8.3 20140320 (prerelease) (Sourcery CodeBench Lite 2014.05-29) 
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
++typedef unsigned char __u_char;
+
+/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/sys/types.h
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+arm-none-linux-gnueabi-g++: error: unrecognized command line option '-m32'
+arm-none-linux-gnueabi-g++: error: unrecognized command line option '-mmmx'
+
+remove '-m32' & '-mmmx' 
+media/webrtc/trunk/build/common.gypi
+toolkit/crashreporter/google-breakpad/src/client/windows/build/common.gypi
+
+remove '-msse2'
+media/webrtc/trunk/build/common.gypi
+media/webrtc/trunk/src/modules/audio_processing/aec/aec.gypi
+media/webrtc/trunk/src/modules/video_processing/main/source/video_processing.gypi
+toolkit/crashreporter/google-breakpad/src/client/windows/build/common.gypi
+
+
+ac_add_options --disable-webrtc
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+scoped enum error "enum SharedHandleType::": 
+
+(recommended)	
+vim mozconfig	#add -std=gnu++0x
+export CXXFLAGS="$CXXFLAGS -std=gnu++0x"	
+
+or,
+
+cd mozilla-release
+vim ./obj-i686-pc-linux-gnu/gfx/gl/Makefile
+CXXFLAGS += $(MOZ_CAIRO_CFLAGS) $(MOZ_PIXMAN_CFLAGS) $(TK_CFLAGS) -std=gnu++0x
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+(needed yet?)
+Modify configure.in
+
+Solved.
+It was just the 'timestamp' change on the configure.in file. This cause the build to want to run 'autoconf'. 
+Specifically it required to run autoconf 2.13 which is an 'old' version required by the mozilla build configuration. 
+Most Linux distributions now have autoconf v2.6x+	
+
+touch -c -t 1302150000 configure.in
+
+===========================
+
+./obj-i686-pc-linux-gnu/config/autoconf.mk
+./obj-i686-pc-linux-gnu/js/src/config/autoconf.mk
+./obj-i686-pc-linux-gnu/nsprpub/config/autoconf.mk
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+GLContext.cpp
+make[6]: Entering directory `/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/gfx/gl'
+arm-none-linux-gnueabi-g++ -o GLContext.o -c  -fvisibility=hidden -DMOZ_GLUE_IN_PROGRAM -DMOZILLA_INTERNAL_API -D_IMPL_NS_COM -DEXPORT_XPT_API -DEXPORT_XPTC_API -D_IMPL_NS_GFX -D_IMPL_NS_WIDGET -DIMPL_XREAPI -DIMPL_NS_NET -DIMPL_THEBES -DSTATIC_EXPORTABLE_JS_API -DNO_NSPR_10_SUPPORT  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/gfx/gl -I. -I../../dist/include  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/dist/include/nspr -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/dist/include/nss      -fPIC  -Wall -Wpointer-arith -Woverloaded-virtual -Werror=return-type -Wtype-limits -Wempty-body -Wsign-compare -Wno-invalid-offsetof -march=armv7-a -mfpu=neon -mfloat-abi=softfp -fno-exceptions -fno-strict-aliasing -fno-rtti -ffunction-sections -fdata-sections -fno-exceptions -fshort-wchar -pthread -pipe  -DNDEBUG -DTRIMMED -Os -freorder-blocks  -fomit-frame-pointer  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/dist/include/cairo  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/widget/gtk2/compat -pthread -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/gtk-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/gtk-2.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/atk-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/cairo -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/pango-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/glib-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/glib-2.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/pixman-1 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/freetype2 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/libpng12 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/gtk-unix-print-2.0   -std=gnu++0x   -DMOZILLA_CLIENT -include ../../mozilla-config.h -MD -MF .deps/GLContext.o.pp  /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/gfx/gl/GLContext.cpp
+In file included from /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/bits/stl_algo.h:59:0,
+                 from /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/algorithm:62,
+                 from /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/gfx/gl/GLContext.cpp:6:
+/home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cstdlib:126:11: error: '::at_quick_exit' has not been declared
+   using ::at_quick_exit;
+           ^
+/home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cstdlib:149:11: error: '::quick_exit' has not been declared
+   using ::quick_exit;
+           ^
+In file included from /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/random:38:0,
+                 from /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/bits/stl_algo.h:65,
+                 from /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/algorithm:62,
+                 from /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/gfx/gl/GLContext.cpp:6:
+
+/home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cmath:1043:11: error: '::acoshl' has not been declared
+   using ::acoshl;
+           ^
+/home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cmath:1047:11: error: '::asinhl' has not been declared
+   using ::asinhl;
+           ^
+/home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cmath:1051:11: error: '::atanhl' has not been declared
+   using ::atanhl;
+
+========   
+   
+vim /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/bits/stl_algo.h
+adding <stdlib.h> after <cstdlib>, and change std::rand() -> rand()
+
+vim /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cstdlib
+#undef _GLIBCXX_HAVE_AT_QUICK_EXIT
+#undef _GLIBCXX_HAVE_QUICK_EXIT
+
+vim /home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/include/c++/4.8.3/cmath
+#undef _GLIBCXX_USE_C99_MATH_TR1
+   
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+ it looks should use
+ #define __STDC_ISO_10646__  201103L
+
+
+/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/features.h:299:0: warning: "__STDC_ISO_10646__" redefined [enabled by default]
+ #define __STDC_ISO_10646__  200009L
+ ^
+
+(now used!)
+In file included from <command-line>:0:0:
+/home/ubuntu/new-disk/CodeSourcery/arm-none-linux-gnueabi/libc/usr/include/stdc-predef.h:34:0: note: this is the location of the previous definition
+ #define __STDC_ISO_10646__  201103L
+
+nsGNOMERegistry.cpp
+arm-none-linux-gnueabi-g++ -o nsGNOMERegistry.o -c  -fvisibility=hidden -DMOZ_GLUE_IN_PROGRAM -DMOZILLA_INTERNAL_API -D_IMPL_NS_COM -DEXPORT_XPT_API -DEXPORT_XPTC_API -D_IMPL_NS_GFX -D_IMPL_NS_WIDGET -DIMPL_XREAPI -DIMPL_NS_NET -DIMPL_THEBES  -DSTATIC_EXPORTABLE_JS_API -DNO_NSPR_10_SUPPORT -DEXCLUDE_SKIA_DEPENDENCIES  -DOS_POSIX=1 -DOS_LINUX=1  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/uriloader/exthandler -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/dom/base -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/dom/ipc -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/content/base/src -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/content/events/src -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/netwerk/base/src -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/netwerk/protocol/http -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/widget/gtk2/compat -pthread -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/gtk-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/gtk-2.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/atk-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/cairo -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/pango-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/glib-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/glib-2.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/pixman-1 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/freetype2 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/libpng12 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/gtk-unix-print-2.0   -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/dbus-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/dbus-1.0/include   -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/ipc/chromium/src -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/ipc/glue -I../../ipc/ipdl/_ipdlheaders  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/uriloader/exthandler -I. -I../../dist/include  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/dist/include/nspr -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/dist/include/nss      -fPIC  -Wall -Wpointer-arith -Woverloaded-virtual -Werror=return-type -Wtype-limits -Wempty-body -Wsign-compare -Wno-invalid-offsetof -march=armv7-a -mfpu=neon -mfloat-abi=softfp -fno-exceptions -fno-strict-aliasing -fno-rtti -ffunction-sections -fdata-sections -fno-exceptions -fshort-wchar -pthread -pipe  -DNDEBUG -DTRIMMED -Os -freorder-blocks  -fomit-frame-pointer  -I/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/widget/gtk2/compat -pthread -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/gtk-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/gtk-2.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/atk-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/cairo -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/pango-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/glib-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/glib-2.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/pixman-1 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/freetype2 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/libpng12 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/gtk-unix-print-2.0   -pthread -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/dbus-1.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/dbus-1.0/include -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include/glib-2.0 -I/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/glib-2.0/include     -DMOZILLA_CLIENT -include ../../mozilla-config.h -MD -MF .deps/nsGNOMERegistry.o.pp  /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/uriloader/exthandler/unix/nsGNOMERegistry.cpp
+In file included from ../../dist/include/nsPromiseFlatString.h:20:0,
+                 from ../../dist/include/nsString.h:180,
+                 from /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/uriloader/exthandler/unix/nsGNOMERegistry.cpp:7:
+../../dist/include/nsTPromiseFlatString.h: In instantiation of 'const nsPromiseFlatCString PromiseFlatCString(const T&) [with T = nsAutoCString]':
+/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/uriloader/exthandler/unix/nsGNOMERegistry.cpp:181:79:   required from here
+../../dist/include/string-template-def-char.h:24:45: error: 'nsPromiseFlatCString::nsPromiseFlatCString(const string_type&)' is private
+ #define nsTPromiseFlatString_CharT          nsPromiseFlatCString
+                                             ^
+../../dist/include/nsTPromiseFlatString.h:78:7: note: in expansion of macro 'nsTPromiseFlatString_CharT'
+       nsTPromiseFlatString_CharT( const string_type& str ) MOZ_DELETE;
+       ^
+In file included from ../../dist/include/nsPromiseFlatString.h:21:0,
+                 from ../../dist/include/nsString.h:180,
+                 from /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/uriloader/exthandler/unix/nsGNOMERegistry.cpp:7:
+../../dist/include/nsTPromiseFlatString.h:105:45: error: within this context
+     return nsTPromiseFlatString_CharT(string);
+
+	 
+vim ./xpcom/string/public/nsTPromiseFlatString.h
+vim ./obj-i686-pc-linux-gnu/dist/include/nsTPromiseFlatString.h
+
+move from private to public
+      // NOT TO BE IMPLEMENTED
+      //nsTPromiseFlatString_CharT( const string_type& str ) MOZ_DELETE;
+	  nsTPromiseFlatString_CharT( const string_type& str );
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+vim configure
+
+configure.in:3086:XLDFLAGS="$X_LIBS"
+#XLDFLAGS="$X_LIBS -L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -lX11 -lxcb -lXau -lXdmcp -lpthread-stubs"
+
+XLDFLAGS="$X_LIBS -L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -lFLAC -lhal-storage -lpanel -lQtTestE -lvorbisidec -lart_lgpl_2 -lFLAC++ -lhistory -lpanelw -lQtWebKitE -lvorbis -lasound -lfontconfig -lICE -lpango-1.0 -lQtXmlE -lwavpack -latk-1.0 -lform -lid3tag -lpangocairo-1.0 -lQtXmlPatternsE -lwrap -lattr -lformw -lIDL-2 -lpangoft2-1.0 -lqwt -lX11 -laudiofile -lfreetype -lIMGegl -lpangox-1.0 -lreadline -lX11-xcb -lavahi-client -lfusion -lip4tc -lpangoxft-1.0 -lx264 -lavahi-common -lgailutil -lip6tc -lpcrecpp -lrsvg-2 -lXau -lavahi-core -lgconf-2 -liptc -lpcreposix -lxcb-composite -lavahi-glib -lgcr -ljackserver -lpcre -lsamplerate -lxcb-damage -lavahi-gobject -lgcrypt -ljack -lphononE -lschroedinger-1.0 -lxcb-dpms -lblkid -lgdbm -ljasper -lpixman-1 -lSDL -lxcb-dri2 -lbluetooth -lgdk_pixbuf-2.0 -ljpeg -lpng12 -lsidplay -lxcb-glx -lgdk_pixbuf_xlib-2.0 -lkms -lpng -lSM -lxcb-randr -lbz2 -lgdk-x11-2.0 -lltdl -lpolkit-agent-1 -lsndfile -lxcb-record -lcairo-gobject -lgio-2.0 -llzo -lpolkit-backend-1 -lxcb-render -lcairo-script-interpreter -lglade-2.0 -lmad -lpolkit-gobject-1 -lxcb-res -lcairo -lGLES_CM -lmenu -lpopt -lspeexdsp -lxcb-screensaver -lcap -lGLESv2 -lmenuw -lproxy -lspeex -lxcb-shape -lcdaudio -lglib-2.0 -lmikmod -lsqlite3 -lxcb-shm -lcdda_interface -lglslcompiler -lmms -lpthread-stubs -lsrv_init -lxcb -lcdda_paranoia -lgmodule-2.0 -lmodplug -lpulse-browse -lsrv_um -lxcb-sync -lgnome-keyring -lmpeg2convert -lpulsecommon-0.9.22 -lssl -lxcb-xevie -lck-connector -lgobject-2.0 -lmpeg2 -lpulse-mainloop-glib -lxcb-xf86dri -lcroco-0.6 -lgp11 -lm -lpulse-simple -lsysfs -lxcb-xfixes -lcrypto -lgpg-error -lpulse -ltasn1 -lxcb-xinerama -lgstapp-0.10 -lncurses -lpvr2d -ltcl8.5 -lxcb-xprint -lc -lgstaudio-0.10 -lncursesw -lpvrPVR2D_BLITWSEGL -ltermcap -lxcb-xtest -lcupsimage -lgstbase-0.10 -lpvrPVR2D_FLIPWSEGL -ltheoradec -lxcb-xvmc -lcups -lgstbasevideo-0.10 -lnfnetlink -lpvrPVR2D_FRONTWSEGL -ltheoraenc -lxcb-xv -lcurl -lgstcdda-0.10 -lpvrPVR2D_LINUXFBWSEGL -ltheora -lXcomposite -lcurses -lgstcheck-0.10 -lpvrQWSWSEGL -lXcursor -ldaemon -lgstcontroller-0.10 -lPVRScopeServices -ltic -lXdamage -ldb-5.1 -lgstdataprotocol-0.10 -lpyglib-2.0-python -lticw -lXdmcp -ldb-5 -lgstfft-0.10 -lpython2.6 -ltiff -lXext -ldb -lgstinterfaces-0.10 -lQt3SupportE -ltinfo -lXfixes -ldbus-1 -lgstnet-0.10 -lQtCLuceneE -ltk8.5 -lXft -ldbus-glib-1 -lgstnetbuffer-0.10 -logg -lQtCoreE -lts -lxml2 -ldirectfb -lgstpbutils-0.10 -loil-0.3 -lQtDBusE -ludev -lXmu -ldirect -lgstphotography-0.10 -lOpenVG -lQtDeclarativeE -lusb-1.0 -lXrandr -ldiscid -lgstreamer-0.10 -lOpenVGU -lQtDesignerComponentsE -lusb -lXrender -lgstriff-0.10 -lopkg -lQtDesignerE -lusc -lxtables -ldrm -lgstrtp-0.10 -lORBit-2 -lQtGuiE -lXt -leggdbus-1 -lgstrtsp-0.10 -lORBitCosNaming-2 -lQtHelpE -luuid -lXv -lEGL -lgstsdp-0.10 -lORBit-imodule-2 -lQtMultimediaE -lv4l1 -lz -lesddsp -lgstsignalprocessor-0.10 -lorc-0.4 -lQtNetworkE -lv4l2 -lesd -lgsttag-0.10 -lorc-test-0.4 -lQtOpenGLE -lv4lconvert -lexpat -lgstvideo-0.10 -lortp -lQtScriptE -lvisual-0.4 -lfaac -lgthread-2.0 -lpamc -lQtScriptToolsE -lvolume_id -lfaad -lgtk-x11-2.0 -lpam_misc -lQtSqlE -lvorbisenc -lffi -lhal -lpam -lQtSvgE -lvorbisfile"
+
+or
+
+vim /home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/widget/xremoteclient/Makefile
+(after include.............)
+XLDFLAGS += -L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -lX11 -lxcb -lXau -lXdmcp -lpthread-stubs
+
+
+	
+mozilla-xremote-client.cpp
+arm-none-linux-gnueabi-g++ -o mozilla-xremote-client.o -c  -fvisibility=hidden -DXPCOM_GLUE -DMOZ_GLUE_IN_PROGRAM -DNO_NSPR_10_SUPPORT  -I/home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/widget/xremoteclient -I. -I../../dist/include  -I/home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/dist/include/nspr -I/home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/dist/include/nss      -fPIC  -pedantic -Wall -Wpointer-arith -Woverloaded-virtual -Werror=return-type -Wtype-limits -Wempty-body -Wno-ctor-dtor-privacy -Wno-overlength-strings -Wno-invalid-offsetof -Wno-variadic-macros -Wno-long-long -march=armv7-a -mfpu=neon -mfloat-abi=softfp -fno-exceptions -fno-strict-aliasing -fno-rtti -ffunction-sections -fdata-sections -fno-exceptions -fshort-wchar -pthread -pipe  -DNDEBUG -DTRIMMED -Os -freorder-blocks  -fomit-frame-pointer   -DMOZILLA_CLIENT -include ../../mozilla-config.h -MD -MF .deps/mozilla-xremote-client.o.pp  /home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/widget/xremoteclient/mozilla-xremote-client.cpp
+/home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/_virtualenv/bin/python /home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/config/pythonpath.py -I../../config /home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/config/expandlibs_exec.py --depend .deps/mozilla-xremote-client.pp --target mozilla-xremote-client --uselist --  arm-none-linux-gnueabi-g++ -o mozilla-xremote-client  -pedantic -Wall -Wpointer-arith -Woverloaded-virtual -Werror=return-type -Wtype-limits -Wempty-body -Wno-ctor-dtor-privacy -Wno-overlength-strings -Wno-invalid-offsetof -Wno-variadic-macros -Wno-long-long -march=armv7-a -mfpu=neon -mfloat-abi=softfp -fno-exceptions -fno-strict-aliasing -fno-rtti -ffunction-sections -fdata-sections -fno-exceptions -fshort-wchar -pthread -pipe  -DNDEBUG -DTRIMMED -Os -freorder-blocks  -fomit-frame-pointer mozilla-xremote-client.o XRemoteClient.o   -lpthread  -Wl,-z,noexecstack  -Wl,-rpath-link,/home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/dist/bin -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/lib   -L../../dist/bin -L../../dist/lib -L/home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/dist/lib -lnspr4 -lplc4 -lplds4   -Wl,--whole-archive /home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/dist/lib/libmozglue.a /home/ubuntu/new-disk/browser/firefox-project/ver19/mozilla-release/obj-i686-pc-linux-gnu/dist/lib/libmemory.a -Wl,--no-whole-archive -rdynamic -ldl    
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: mozilla-xremote-client.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: XRemoteClient.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(dummy.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(bignum-dtoa.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(bignum.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(cached-powers.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(diy-fp.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(double-conversion.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(fast-dtoa.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(fixed-dtoa.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(strtod.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(HashFunctions.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(SHA1.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+XRemoteClient.o: In function `XRemoteClient::Init()':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient4InitEv+0x18): undefined reference to `XOpenDisplay'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient4InitEv+0x48): undefined reference to `XInternAtoms'
+XRemoteClient.o: In function `XRemoteClient::Shutdown()':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient8ShutdownEv+0x1c): undefined reference to `XCloseDisplay'
+XRemoteClient.o: In function `XRemoteClient::CheckChildren(unsigned long)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient13CheckChildrenEm+0x30): undefined reference to `XQueryTree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient13CheckChildrenEm+0x90): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient13CheckChildrenEm+0xa4): undefined reference to `XFree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient13CheckChildrenEm+0x104): undefined reference to `XFree'
+XRemoteClient.o: In function `XRemoteClient::CheckWindow(unsigned long)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient11CheckWindowEm+0x54): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient11CheckWindowEm+0x68): undefined reference to `XFree'
+XRemoteClient.o: In function `XRemoteClient::GetLock(unsigned long, bool*)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0xdc): undefined reference to `XGrabServer'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0x128): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0x194): undefined reference to `XChangeProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0x19c): undefined reference to `XUngrabServer'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0x1a4): undefined reference to `XFlush'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0x234): undefined reference to `XNextEvent'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient7GetLockEmPb+0x29c): undefined reference to `XFree'
+XRemoteClient.o: In function `XRemoteClient::FindBestWindow(char const*, char const*, char const*, bool)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x54): undefined reference to `XQueryTree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x10c): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x138): undefined reference to `XFree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x1dc): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x20c): undefined reference to `XFree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x26c): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x2a0): undefined reference to `XFree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x2e8): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x310): undefined reference to `XFree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x318): undefined reference to `XFree'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient14FindBestWindowEPKcS1_S1_b+0x338): undefined reference to `XFree'
+XRemoteClient.o: In function `XRemoteClient::FreeLock(unsigned long)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient8FreeLockEm+0x54): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient8FreeLockEm+0x90): undefined reference to `XFree'
+XRemoteClient.o: In function `XRemoteClient::WaitForResponse(unsigned long, char**, bool*, unsigned long)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient15WaitForResponseEmPPcPbm+0x40): undefined reference to `XNextEvent'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient15WaitForResponseEmPPcPbm+0xf4): undefined reference to `XGetWindowProperty'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient15WaitForResponseEmPPcPbm+0x1a4): undefined reference to `XFree'
+XRemoteClient.o: In function `XRemoteClient::DoSendCommand(unsigned long, char const*, char const*, char**, bool*)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient13DoSendCommandEmPKcS1_PPcPb+0xa8): undefined reference to `XChangeProperty'
+XRemoteClient.o: In function `XRemoteClient::DoSendCommandLine(unsigned long, int, char**, char const*, char**, bool*)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient17DoSendCommandLineEmiPPcPKcS1_Pb+0x178): undefined reference to `XChangeProperty'
+XRemoteClient.o: In function `XRemoteClient::SendCommandInternal(char const*, char const*, char const*, char const*, int, char**, char const*, char**, bool*)':
+XRemoteClient.cpp:(.text._ZN13XRemoteClient19SendCommandInternalEPKcS1_S1_S1_iPPcS1_S3_Pb+0x40): undefined reference to `XSetErrorHandler'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient19SendCommandInternalEPKcS1_S1_S1_iPPcS1_S3_Pb+0x9c): undefined reference to `XSelectInput'
+XRemoteClient.cpp:(.text._ZN13XRemoteClient19SendCommandInternalEPKcS1_S1_S1_iPPcS1_S3_Pb+0x128): undefined reference to `XSetErrorHandler'
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+ac_add_options --disable-crashreporter
+
+cc1plus: error: unrecognized command line option ‘-mfpu=neon’
+cc1plus: error: unrecognized command line option ‘-mfloat-abi=softfp’
+/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/toolkit/crashreporter/google-breakpad/src/common/string_conversion.cc:1:0: error: bad value (armv7-a) for -march= switch
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+supress warning (not working)
+
+configure.in
+    if test "$ac_cv_have_usable_wchar_option_v2" = "yes"; then
+        AC_DEFINE(HAVE_CPP_2BYTE_WCHAR_T)
+        HAVE_CPP_2BYTE_WCHAR_T=1
+        if test "$OS_TARGET" = Android; then
+            WCHAR_CFLAGS="-fshort-wchar -Wl,--no-wchar-size-warning"
+            CXXFLAGS="$CXXFLAGS -Wl,--no-wchar-size-warning"
+            CFLAGS="$CFLAGS -Wl,--no-wchar-size-warning"
+            DSO_LDOPTS="$DSO_LDOPTS -Wl,--no-wchar-size-warning"
+        else
+            -WCHAR_CFLAGS="-fshort-wchar"
+            +WCHAR_CFLAGS="-fshort-wchar -Wl,--no-wchar-size-warning"
+            +CXXFLAGS="$CXXFLAGS -Wl,--no-wchar-size-warning"
+            +CFLAGS="$CFLAGS -Wl,--no-wchar-size-warning"
+            +DSO_LDOPTS="$DSO_LDOPTS -Wl,--no-wchar-size-warning"
+        fi
+    else
+        CXXFLAGS=$_SAVE_CXXFLAGS
+    fi
+
+
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../gfx/2d/DrawEventRecorder.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../gfx/2d/Blur.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../gfx/2d/Scale.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../gfx/2d/ScaledFontBase.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../gfx/2d/DrawTargetDual.o uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+vim ./netwerk/base/src/nsNativeConnectionHelper.cpp
+
+add "#if !defined(MOZ_PLATFORM_MAEMO)" for "nsAutodial::"
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(HashFunctions.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+/home/ubuntu/new-disk/CodeSourcery/bin/../lib/gcc/arm-none-linux-gnueabi/4.8.3/../../../../arm-none-linux-gnueabi/bin/ld: warning: ../../dist/lib/libmozglue.a(SHA1.o) uses 2-byte wchar_t yet the output is to use 4-byte wchar_t; use of wchar_t values across objects may fail
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+../../dist/bin/libxul.so: undefined reference to `XtRealizeWidget'
+../../dist/bin/libxul.so: undefined reference to `gtk_container_forall'
+../../dist/bin/libxul.so: undefined reference to `XSetTile'
+
+ac-option --disable-xul
+
+vim nsStyleStruct.h
+
+#define NS_STYLE_DISPLAY_INLINE_GRID            21
+#define NS_STYLE_DISPLAY_INLINE_STACK           25
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+add necessary path for libstdc++
+
+../../uriloader/exthandler/nsGNOMERegistry.o: In function `nsGNOMERegistry::GetFromType(nsACString_internal const&)':
+nsGNOMERegistry.cpp:(.text._ZN15nsGNOMERegistry11GetFromTypeERK19nsACString_internal+0x244): undefined reference to `nsPromiseFlatCString::nsPromiseFlatCString(nsCString const&)'
+../../ipc/chromium/child_process_host.o: In function `ChildProcessHost::ChildProcessHost(ChildProcessInfo::ProcessType)':
+child_process_host.cc:(.text._ZN16ChildProcessHostC2EN16ChildProcessInfo11ProcessTypeE+0xac): undefined reference to `std::__detail::_List_node_base::_M_hook(std::__detail::_List_node_base*)'
+../../ipc/chromium/child_process_host.o: In function `ChildProcessHost::~ChildProcessHost()':
+child_process_host.cc:(.text._ZN16ChildProcessHostD2Ev+0x74): undefined reference to `std::__detail::_List_node_base::_M_unhook()'
+child_process_host.cc:(.text._ZN16ChildProcessHostD2Ev+0x94): undefined reference to `std::__detail::_List_node_base::_M_unhook()'
+../../ipc/chromium/waitable_event_posix.o: In function `base::WaitableEvent::SignalOne()':
+waitable_event_posix.cc:(.text._ZN4base13WaitableEvent9SignalOneEv+0x3c): undefined reference to `std::__detail::_List_node_base::_M_unhook()'
+../../ipc/chromium/waitable_event_posix.o: In function `base::WaitableEvent::Enqueue(base::WaitableEvent::Waiter*)':
+waitable_event_posix.cc:(.text._ZN4base13WaitableEvent7EnqueueEPNS0_6WaiterE+0x30): undefined reference to `std::__detail::_List_node_base::_M_hook(std::__detail::_List_node_base*)'
+../../ipc/chromium/waitable_event_posix.o: In function `base::WaitableEvent::WaitableEventKernel::Dequeue(base::WaitableEvent::Waiter*, void*)':
+waitable_event_posix.cc:(.text._ZN4base13WaitableEvent19WaitableEventKernel7DequeueEPNS0_6WaiterEPv+0x48): undefined reference to `std::__detail::_List_node_base::_M_unhook()'
+collect2: error: ld returned 1 exit status
+make[5]: *** [libxul.so] Error 1
+make[5]: Leaving directory `/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu/toolkit/library'
+make[4]: *** [libs_tier_platform] Error 2
+make[4]: Leaving directory `/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu'
+make[3]: *** [tier_platform] Error 2
+make[3]: Leaving directory `/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu'
+make[2]: *** [default] Error 2
+make[2]: Leaving directory `/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release/obj-i686-pc-linux-gnu'
+make[1]: *** [realbuild] Error 2
+make[1]: Leaving directory `/home/ubuntu/new-disk/browser/firefox-project/ver22/mozilla-release'
+make: *** [build] Error 2
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+/home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/intl/lwbrk/src/nsPangoBreaker.cpp:8:31: fatal error: pango/pango-break.h: No such file or directory
+ #include <pango/pango-break.h>
+
+
+ 
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+/home/ubuntu/new-disk/browser/firefox-project/ver10/mozilla-release/ipc/chromium/src/base/file_util.cc:228:35: error: 'ftruncate' was not declared in this scope
+   if (ftruncate(fd, current_offset) != 0)
+
+
+ #if defined(OS_WIN)
+ #include <io.h>
+ #endif
+ #include <stdio.h>
+-#if defined(ANDROID)
++#if defined(ANDROID) || defined(OS_POSIX)
+ #include <unistd.h>
+ #endif
+ 
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+/home/ubuntu/new-disk/browser/firefox-project/ver10/mozilla-release/ipc/chromium/src/base/message_pump_libevent.cc:359:59: error: 'write' was not declared in this scope
+   int nwrite = HANDLE_EINTR(write(wakeup_pipe_in_, &buf, 1));
+
+/home/ubuntu/new-disk/browser/firefox-project/ver10/mozilla-release/ipc/chromium/src/base/file_util_linux.cc:43:17: error: 'close' was not declared in this scope
+     close(infile);
+   
+#include <unistd.h>   
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+/home/ubuntu/new-disk/browser/firefox-project/ver10/mozilla-release/ipc/chromium/src/base/time_posix.cc:181:2: error: #error No usable tick clock function on this platform.
+ #error No usable tick clock function on this platform.
+
+Line 164
+-#elif defined(__OpenBSD__) || defined(OS_POSIX) && defined(_POSIX_MONOTONIC_CLOCK) && _POSIX_MONOTONIC_CLOCK >= 0
++#elif defined(OS_POSIX)
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+/home/ubuntu/new-disk/browser/firefox-project/ver10/mozilla-release/js/xpconnect/src/nsXPConnect.cpp:66:33: fatal error: jsdIDebuggerService.h: No such file or directory
+ #include "jsdIDebuggerService.h"
+ 
+ remove --disable-jsd
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+/home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/gfx/thebes/gfxPlatform.cpp:630:53: error: 'cairo_null_surface_create' was not declared in this scope
+  cairo_null_surface_create(CAIRO_CONTENT_COLOR_ALPHA);
+                                                     ^
+/home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/gfx/thebes/gfxPlatform.cpp:635:95: error: 'cairo_surface_attach_snapshot' was not declared in this scope
+     cairo_surface_attach_snapshot(imgSurface->CairoSurface(), nullSurf, SourceSnapshotDetached);
+
+-----------------------------	 
+	 
+--- a/gfx/thebes/gfxPlatform.cpp	2013-05-22 17:28:19.000000000 -0700
++++ b/gfx/thebes/gfxPlatform.cpp	2013-05-23 21:20:16.000000000 -0700
+@@ -535,6 +535,7 @@ void SourceBufferDestroy(void *srcSurfUD
+   delete static_cast<SourceSurfaceUserData*>(srcSurfUD);
+ }
+ 
++#if MOZ_TREE_CAIRO
+ void SourceSnapshotDetached(cairo_surface_t *nullSurf)
+ {
+   gfxImageSurface* origSurf =
+@@ -542,6 +543,13 @@ void SourceSnapshotDetached(cairo_surfac
+ 
+   origSurf->SetData(&kSourceSurface, NULL, NULL);
+ }
++#else
++void SourceSnapshotDetached(void *nullSurf)
++{
++  gfxImageSurface* origSurf = static_cast<gfxImageSurface*>(nullSurf);
++  origSurf->SetData(&kSourceSurface, NULL, NULL);
++}
++#endif
+ 
+ RefPtr<SourceSurface>
+ gfxPlatform::GetSourceSurfaceForSurface(DrawTarget *aTarget, gfxASurface *aSurface)
+@@ -654,6 +662,7 @@ gfxPlatform::GetSourceSurfaceForSurface(	 
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+WARNING: NS_ENSURE_TRUE(mOwner && !mCanceled) failed: file /home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/image/src/imgRequestProxy.cpp, line 569
+
+vim ./xpcom/glue/nsDebug.h 
+
++WARNING_DEBUG: customized debug and warn level
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+js/src/ion/arm/MacroAssembler-arm.cpp
+
+line 1355: 
+push(Imm32((uint32) fakeReturnAddr));	->	Push(Imm32((uint32) fakeReturnAddr));
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+(EE) pvr(0): PVRDisplayCommandNoArgs: drmCommandWrite failed (-22)
+(EE) pvr(0): PVRDisplayPowerManagementSet: PVRDisplayCommandNoArgs failed (-22)
+
+after firefox:
+xset dpms 0 0 0
+xset -dpms
+xset s off
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+###!!! ASSERTION: Unknown pixel depth: 'Error', file /home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/gfx/gl/GLContextProviderEGL.cpp, line 2071
+
+Failed to create EGL config!,line 2222
+
+vim gfx/gl/GLContextProviderEGL.cpp
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+To disable:
+JavaScript strict warning: chrome://browser/content/browser.js, line 3078: anonymous function does not always return a value
+
+silent console by
+
+/usr/local/XSGX/bin/X -nolisten tcp -config /usr/local/XSGX/etc/xorg.conf &> /dev/null &
+firefox &> /dev/null &
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+Fontconfig warning: Directory/file mtime in the future. New fonts may not be detected
+
+edit font.conf add:
+
+	<match target="font">
+		<edit name="antialias" mode="assign">
+				<bool>true</bool>
+		</edit>
+	</match>
+
+	<match target="font">
+		<edit name="hinting" mode="assign">
+			<bool>true</bool>
+		</edit>
+	</match>
+
+	<match target="font">
+		<edit name="hintstyle" mode="assign">
+			<const>hintfull</const>
+		</edit>
+	</match>	
+
+	<match target="font">
+		<edit name="rgba" mode="assign">
+			<const>rgb</const>
+		</edit>
+	</match>	
+
+	<match target="font">
+		<edit mode="assign" name="lcdfilter">
+			<const>lcddefault</const>
+		</edit>
+	</match>
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+first time start firefox will crash, 2nd time is fine
+
+solved by cp existing .mozilla/ folder to ~/
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+
+$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+=======================================================================================================================================================================
+X windows
+=======================================================================================================================================================================
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+configure.ac:20: error: must install xorg-macros 1.4 or later before running autoconf/autogen                                                                   
+configure.ac:20: the top level                                                  
+
+sudo apt-get install xutils-dev
+
+//
+i found the same problem and also the solution:
+download and install the xutils-dev package from lucid
+
+http://packages.ubuntu.com/lucid/xutils-dev
+
+this one contains a newer version of the xorg-macros 
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+ts_calibrate
+
+export TSLIB_CALIBFILE=/usr/local/etc/pointercal
+export TSLIB_CONFFILE=/usr/local/etc/ts.conf
+export TSLIB_PLUGINDIR=/usr/local/lib/ts
+export TSLIB_FBDEVICE=/dev/fb0
+export TSLIB_TSDEVICE=/dev/input/event1
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+Graphics SDK 
+
+arm-none-linux-gnueabi- (4.3.3, 4.5.2 ok?)
+
+vim Rules.make
+
+make clean
+
+(ezsdk505)
+make BUILD=release OMAPES=6.x FBDEV=yes SUPPORT_XORG=1 all
+
+mkdir ..../etc
+mkdir ..../etc/init.d
+make BUILD=release OMAPES=6.x FBDEV=yes SUPPORT_XORG=1 install DESTDIR=/home/ubuntu/new-disk/Graphics_SDK_4_04_00_02/prog-install
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+change to absolute path
+
+/home/ubuntu/new-disk/Graphics_SDK_5_01_01_01/GFX_Linux_KM/services4/3rdparty/dc_ti43xx_linux/omaplfb_linux.c
+/home/ubuntu/new-disk/Graphics_SDK_5_01_01_01/GFX_Linux_KM/services4/srvkm/env/linux/pvr_drm.h
+/home/ubuntu/new-disk/Graphics_SDK_5_01_01_01/GFX_Linux_KM/services4/include/env/linux/pvr_drm_shared.h
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+2.6.37 kernel
+
+arm-none-linux-guneabi- (4.3.3, 2009q1-203)
+
+make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- zImage
+
+make ARCH=arm CROSS_COMPILE=arm-none-linux-gnueabi- INSTALL_MOD_PATH=/home/ubuntu/new-disk/kernel/module-install modules modules_install
+
+
+root@Evertz:/dev/shm# lsmod
+Module                  Size  Used by    Not tainted
+bufferclass_ti          4946  0
+omaplfb                10726  0
+pvrsrvkm              155266  2 bufferclass_ti,omaplfb
+ti81xxhdmi             17685  0
+ti81xxfb               17855  1
+vpss                   66887  3 omaplfb,ti81xxhdmi,ti81xxfb
+syslink              1128007  0
+pcie_api               11844  0
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+Start Graphics:
+
+/home/sitara/ti/load-hd-firmware.sh start
+/etc/init.d/38xx-demo 			(modified)
+
+(insmod /lib/modules/2.6.37/kernel/drivers/char/drm.ko)
+(insmod /lib/modules/2.6.37/kernel/drivers/char/pvrsrvkm.ko)
+(insmod /opt/gfxlibraries/gfx_rel_es6.x/bufferclass_ti.ko)
+
+/etc/init.d/rc.pvr start		(modified)
+
+/usr/local/XSGX/bin/X -verbose -config /usr/local/XSGX/etc/xorg.conf &
+/usr/local/XSGX/bin/X -verbose -nolisten tcp -config /usr/local/XSGX/etc/xorg.conf &
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+export DISPLAY=:0
+export LD_LIBRARY_PATH=/usr/local/XSGX/lib:/usr/lib/firefox-18.0:/usr/local/lib:/opt/gfxlibraries/gfx_rel_es6.x
+
+(Test Sample)
+/opt/gfxlibraries/gfx_rel_es6.x/xgles1test1 -f 1000
+
+
+(font link in filesystem /usr/share/fonts -> /usr/local/XSGX/share/fonts)
+
+/usr/lib/firefox-18.0/firefox -h
+/usr/lib/firefox-18.0/firefox
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+cp ~/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib/ to root file system
+
+libXrender.so.1
+libasound.so.2
+libgobject-2.0.so.0
+libpangoft2-1.0.so.0
+libfontconfig.so.1
+libpangocairo-1.0.so.0
+libpango-1.0.so.0
+libcairo.so.2
+libgmodule-2.0.so.0
+libgtk-x11-2.0.so.0
+libatk-1.0.so.0
+libgio-2.0.so.0
+libgdk-x11-2.0.so.0
+libgdk_pixbuf-2.0.so.0
+libpthread-stubs.so.0
+libXrandr.so.2
+libXcursor.so.1
+libXcomposite.so.1
+
+cp ~/new-disk/CodeSourcery/arm-none-linux-gnueabi/libc/usr/lib/libstdc++.so.6.0.19 to root file system
+ln -sf libstdc++.so.6.0.19 libstdc++.so.6
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+Below messages are fine, since it passed graphics tests and also quoted https://groups.google.com/forum/#!topic/pandaboard/8mllwF7mXfQ:
+
+"this is fine, it's just related with AIGLX. The xdriver supports EXA and DRI2."
+
+"Since the existing composite window managers for X (like compiz-fusion) relay on the AIGLX
+architecture that requires GLX, is currently not possible to bring this type of X acceleration to a platform running OpenGL ES."
+This was written in 2008 for the BeagleBoard. Is this still relevant?
+
+
+(1)
+sgxComposite: failed to do composition
+
+-------
+
+(2)
+
+(==) RandR enabled
+(EE) AIGLX error: dlopen of /usr/local/XSGX/lib/dri/pvr_dri.so failed (/usr/local/XSGX/lib/dri/pvr_dri.so: cannot open shared object file: No such file or directory)
+(EE) AIGLX: reverting to software rendering
+(II) AIGLX: Screen 0 is not DRI capable
+(II) AIGLX: Loaded and initialized /usr/local/XSGX/lib/dri/swrast_dri.so
+(II) GLX: Initialized DRISWRAST GL provider for screen 0
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+$$$$$$$$$$$$$
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+=======================================================================================================================================================================
+pango & fontconfig
+=======================================================================================================================================================================
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+$$$$$$$$$$$$$
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+pango cross compile (1.27.1)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc --enable-shared --with-dynamic-modules=arabic-fc,basic-fc,hangul-fc,hebrew-fc,indic-fc,khmer-fc,syriac-fc,thai-fc,tibetan-fc LDFLAGS="-shared -L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC"
+
+make install DESTDIR=/home/ubuntu/new-disk/browser/pango-1.27.1/prog-install
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+fontconfig (2.4.1)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc --enable-shared LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC" --with-arch=arm
+
+make install DESTDIR=/home/ubuntu/new-disk/browser/fontconfig-2.4.1/prog-install
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+xset (1.2.3)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -L/home/ubuntu/new-disk/Graphics_SDK_4_04_00_02/prog-install/usr/local/XSGX/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC"
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+mkfontdir (1.0.7)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC"
+
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+mkfontscale (1.1.1)
+
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/home/ubuntu/new-disk/Graphics_SDK_4_04_00_02/prog-install/usr/local/XSGX/lib/pkgconfig
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -L/home/ubuntu/new-disk/Graphics_SDK_4_04_00_02/prog-install/usr/local/XSGX/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC" CFLAGS="-I/home/ubuntu/new-disk/ezsdk505/component-sources/graphics-sdk_4.04.00.02/targetfs/XSGX/include -I/home/ubuntu/new-disk/ezsdk505/component-sources/graphics-sdk_4.04.00.02/targetfs/XSGX/include/freetype2" 
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+gtk+ (2.10.14)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC"
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+xrandr (1.3.5)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC"
+-------------------------------------------------------------------------------------------------------------------------------------------------
+cairo (1.10.2)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC" pixman_CFLAGS=/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/include pixman_LIBS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib"	
+-------------------------------------------------------------------------------------------------------------------------------------------------
+pixman (0.26.0)	
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+freetype2 (2.4.11)
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc LDFLAGS="-L/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib -Wl,-rpath-link,/home/ubuntu/new-disk/ezsdk505/linux-devkit/arm-none-linux-gnueabi/usr/lib" LD=arm-none-linux-gnueabi-ld CXX=arm-none-linux-gnueabi-c++ CFLAGS="-O3 -fPIC" CPPFLAGS="-O3 -fPIC" CXXFLAGS="-O3 -fPIC"	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+-------------------------------------------------------------------------------------------------------------------------------------------------	
+
+
+
+
+
+
+
+==================================================================================================================================================
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+Compiling Linux Kernel
+
+Change to the base of the Linux source directory.
+
+Choose default kernel configuration for your platform.
+
+$ make CROSS_COMPILE=arm-none-linux-gnueabi- ARCH=arm ti8168_evm_defconfig
+
+Initiate the build.
+
+$ make CROSS_COMPILE=arm-none-linux-gnueabi- ARCH=arm uImage
+
+Note
+For the kernel image (uImage) to be built, mkimage utility must be included in the path. mkimage utility is generated (under tools folder of U-Boot) while building the U-Boot binary.
+
+On successful completion, file uImage will be created in the directory ./arch/arm/boot.
+
+Copy this file to the root directory of your TFTP server. 
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+Modifying Kernel Configuration
+DM8168 EVM
+
+This section describes the steps to configure the kernel for DM8168 EVM and illustrates related configuration items for reference.
+
+Start with the default configuration for your platform
+
+$ make CROSS_COMPILE=arm-none-linux-gnueabi- ARCH=arm ti8168_evm_defconfig
+
+To view configuration interactively:
+
+$ make CROSS_COMPILE=arm-none-linux-gnueabi- ARCH=arm menuconfig
+
+From the onscreen menu, select System Type and press ENTER:
+
+   General setup  --->
+[*] Enable loadable module support  --->
+-*- Enable the block layer  --->
+   System Type  --->
+   Bus support  --->
+   Kernel Features  --->
+   ...
+   ...
+
+Select ARM system type
+
+ARM system type (TI OMAP)  --->   
+TI OMAP Common Features  --->
+TI OMAP2/3/4 Specific Features  ---> 
+
+You will be presented with various ARM based SoCs. Select OMAP as
+
+(X) TI OMAP
+
+After pressing ENTER, you will be presented earlier menu. Select "TI OMAP2/3/4 Specific Features" and press ENTER. Select various options as shown below (marked with '[*]') by pressing Y on each item after selecting it.
+
+[*] Typical OMAP configuration 
+[ ] TI OMAP2
+[ ] TI OMAP3
+[ ] TI OMAP4
+[*] TI 81XX
+[*] TI816X support
+...
+    *** TI81XX Board Type ***
+[*] TI8168 Evaluation Module
+
+Note that the "TI816X support" option will be shown only if you enable "TI 81XX". Similarly, "TI8168 Evaluation Module" option will be presented only after selecting "TI816X support"
+
+Choose Exit successively to return to previous menu(s) and eventually back to the shell. Make sure to save the changes you have made when prompted at exit.
+
+Some of the key drivers which may be enabled in the default configuration are:
+
+    Serial port
+    SATA
+    Ethernet
+    PCI Express Root Complex
+    MMC/SD
+    I2C
+    GPIO
+    Video Display
+    Audio
+    NAND
+    Touchscreen
+    Keypad
+    PCI Express Root Complex
+    PCI Express Boot Driver
+    PCI Express EP Driver (mutually exclusive with RC driver)
+
+If you are looking for some particular functionality please double-check that it is enabled in the config options.
+
+Also, please refer individual driver documentation about enabling particular driver and various configurations and dependencies as applicable. 
+
+
+==============================================================================================================================================================
+
+
+arch=arm
+baudrate=115200
+board=am43xx
+board_name=AM43__GP
+board_rev=1.2A
+boot_targets=usb mmc0 nand
+bootcmd=for target in ${boot_targets}; do run bootcmd_${target}; done
+bootcmd_mmc0=setenv devnum 0; setenv rootpart 2; run mmc_boot;
+bootcmd_nand=run nandboot;
+bootcmd_usb=setenv devnum 0; run usb_boot;
+bootdelay=3
+bootdir=/boot
+bootenv=uEnv.txt
+bootfile=zImage
+bootpart=0:2
+console=ttyO0,115200n8
+cpu=armv7
+eth1addr=34:b1:f7:31:57:a7
+ethact=cpsw
+ethaddr=34:b1:f7:31:57:a5
+fdt_high=0xa0000000
+fdtaddr=0x80F80000
+fdtfile=undefined
+findfdt=if test $board_name = AM43EPOS; then setenv fdtfile am43x-epos-evm.dtb; fi; if test $board_name = AM43__GP; then setenv fdtfile am437x-gp-evm.dtb; fi; if test $fdtfile = undefined; then echo WARNING: Could not determine device tree; fi;
+importbootenv=echo Importing environment from mmc ...; env import -t $loadaddr $filesize
+loadaddr=0x80200000
+loadbootenv=load mmc ${mmcdev} ${loadaddr} ${bootenv}
+loadfdt=load mmc ${bootpart} ${fdtaddr} ${bootdir}/${fdtfile}
+loadimage=load mmc ${bootpart} ${loadaddr} ${bootdir}/${bootfile}
+loadramdisk=load mmc ${mmcdev} ${rdaddr} ramdisk.gz
+mmc_boot=setenv devtype mmc; if mmc dev ${devnum}; then run mmcargs;run scan_boot; run mmcboot;setenv mmcdev 1; setenv bootpart 1:2; run mmcboot;fi
+mmcargs=setenv bootargs console=${console} ${optargs} root=${mmcroot} rootfstype=${mmcrootfstype}
+mmcboot=mmc dev ${mmcdev}; if mmc rescan; then echo SD/MMC found on device ${mmcdev};if run loadbootenv; then echo Loaded environment from ${bootenv};run importbootenv;fi;if test -n $uenvcmd; then echo Running uenvcmd ...;run uenvcmd;fi;if run loadimage; then run loadfdt; echo Booting from mmc${mmcdev} ...; run mmcargs; bootz ${loadaddr} - ${fdtaddr}; fi;fi;
+mmcdev=0
+mmcroot=/dev/mmcblk0p2 rw
+mmcrootfstype=ext4 rootwait
+mtdids=nand0=nand.0
+mtdparts=mtdparts=nand.0:256k(NAND.SPL),256k(NAND.SPL.backup1),256k(NAND.SPL.backup2),256k(NAND.SPL.backup3),512k(NAND.u-boot-spl-os),1m(NAND.u-boot),256k(NAND.u-boot-env),256k(NAND.u-boot-env.backup1),7m(NAND.kernel),-(NAND.file-system)
+nandargs=setenv bootargs console=${console} ${optargs} root=${nandroot} rootfstype=${nandrootfstype}
+nandboot=echo Booting from nand ...; run nandargs; nand read ${fdtaddr} NAND.u-boot-spl-os; nand read ${loadaddr} NAND.kernel; bootz ${loadaddr} - ${fdtaddr}
+nandroot=ubi0:rootfs rw ubi.mtd=NAND.file-system,4096
+nandrootfstype=ubifs rootwait=1
+netargs=setenv bootargs console=${console} ${optargs} root=/dev/nfs nfsroot=${serverip}:${rootpath},${nfsopts} rw ip=dhcp
+netboot=echo Booting from network ...; setenv autoload no; dhcp; tftp ${loadaddr} ${bootfile}; tftp ${fdtaddr} ${fdtfile}; run netargs; bootz ${loadaddr} - ${fdtaddr}
+nfsopts=nolock
+partitions=uuid_disk=${uuid_gpt_disk};name=rootfs,start=2MiB,size=-,uuid=${uuid_gpt_rootfs}
+ramargs=setenv bootargs console=${console} ${optargs} root=${ramroot} rootfstype=${ramrootfstype}
+ramroot=/dev/ram0 rw ramdisk_size=65536 initrd=${rdaddr},64M
+ramrootfstype=ext2
+rdaddr=0x81000000
+rootpart=2
+rootpath=/export/rootfs
+scan_boot=echo Scanning ${devtype} ${devnum}...; for prefix in ${bootdir}; do for script in ${bootfile}; do run script_boot; done; done;
+script_boot=if load ${devtype} ${devnum}:${rootpart} ${loadaddr} ${bootdir}/${bootfile}; then run findfdt; load ${devtype} ${devnum}:${rootpart} ${fdtaddr} ${bootdir}/${fdtfile};fi;
+soc=am33xx
+static_ip=${ipaddr}:${serverip}:${gatewayip}:${netmask}:${hostname}::off
+stderr=serial
+stdin=serial
+stdout=serial
+usb_boot=setenv devtype usb; run usb_init; if usb dev 0; then run usbargs;run scan_boot; bootz ${loadaddr} - ${fdtaddr}; fi
+usb_init=usb start 0;
+usbargs=setenv bootargs console=${console} ${optargs} root=${usbroot} rootfstype=${usbrootfstype}
+usbroot=/dev/sda2 rw
+usbrootfstype=ext4 rootwait
+vendor=ti
+ver=U-Boot 2013.10-g78d8ebd (May 09 2014 - 15:49:05)
+
+
+==================================================================================================================================
+
+
+fatload mmc 0:1 0x80200000 uImage
+fatload mmc 0:1 0x80f80000 devicetree-zImage-am437x-gp-evm.dtb
+fatload mmc 0:1 0x82000000 root.cpio.gz.uboot
+bootm 0x80200000 0x82000000 0x80f80000
+fatload mmc 0:1 0x80200000 zImage
+bootz 0x80200000 - 0x80f80000
+
+
+Working:
+
+********************************************************************************************************************
+(3.1) Linux
+-cd /var/volatile/run/media/mmcblk0p1
+flash_erase /dev/mtd8 0 0
+nandwrite -p /dev/mtd8 uImage
+flash_erase /dev/mtd7 0 0
+nandwrite -p /dev/mtd7 devicetree-zImage-am437x-gp-evm.dtb
+flash_erase /dev/mtd9 0 0
+nandwrite -p /dev/mtd9 ramdisk.gz
+sync
+(3.2) u-boot
+#setenv bootargs console=ttyO0,115200n8 root=/dev/ram0 rw ramdisk_size=262144 initrd=0x82000000,128M rootfstype=ext2
+setenv bootargs console=ttyO0,115200n8 root=/dev/ram0 rw ramdisk_size=524288 initrd=0x82000000,448M rootfstype=ext2
+setenv bootargs console=ttyO0,115200n8 root=/dev/ram0 rw ramdisk_size=524288 initrd=0x82000000,448M rootfstype=ext2 vram=50M
+
+#nand read 0x80200000 NAND.kernel;nand read 0x80F80000 NAND.u-boot-env.backup1 0xb588;nand read 0x82000000 NAND.file-system 0x2000000
+nand read 0x80200000 NAND.kernel;nand read 0x80F80000 NAND.u-boot-env.backup1 0xb588;nand read 0x82000000 NAND.file-system 0xa800000
+
+bootm 0x80200000 - 0x80F80000
+********************************************************************************************************************
+
+cd /dev/input
+link touchscreen0 -> event1
+
+********************************************************************************************************************
+
+#####make ramdisk#####
+#dd if=/dev/zero of=ramdisk bs=1M count=256
+dd if=/dev/zero of=ramdisk bs=1M count=448
+
+mkfs.ext2 ramdisk
+mkdir mnt
+sudo mount -o loop ramdisk mnt
+//sudo mount ramdisk mnt
+cp -ar <path/to/filesys>/* mnt
+umount mnt
+gzip ramdisk
+#####modify ramdisk#####
+gunzip ramdisk.gz
+sudo mount ramdisk mnt
+<modify content>
+sudo umount mnt
+gzip ramdisk
+########################
+
+
+(boot mmc file sysytem)
+------------------------------------------------
+(1.1) Linux
+-cd /var/volatile/run/media/mmcblk0p1
+flash_erase /dev/mtd8 0 0
+nandwrite -p /dev/mtd8 zImage
+flash_erase /dev/mtd7 0 0
+nandwrite -p /dev/mtd7 devicetree-zImage-am437x-gp-evm.dtb
+sync
+(1.2) u-boot
+setenv bootargs console=ttyO0,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext4 rootwait
+nand read 0x80200000 NAND.kernel
+nand read 0x80F80000 NAND.u-boot-env.backup1 0xb588
+bootz 0x80200000 - 0x80F80000
+------------------------------------------------
+(2.1) Linux
+-cd /var/volatile/run/media/mmcblk0p1
+flash_erase /dev/mtd8 0 0
+nandwrite -p /dev/mtd8 uImage
+flash_erase /dev/mtd7 0 0
+nandwrite -p /dev/mtd7 devicetree-zImage-am437x-gp-evm.dtb
+sync
+(2.2) u-boot
+setenv bootargs console=ttyO0,115200n8 root=/dev/mmcblk0p2 rw rootfstype=ext4 rootwait
+nand read 0x80200000 NAND.kernel
+nand read 0x80F80000 NAND.u-boot-env.backup1 0xb588
+bootm 0x80200000 - 0x80F80000
+------------------------------------------------
+
+
+========================================================================================================================================================
+
+dd bs=1M count=64 if=/dev/zero of=/root/data/backing_file
+
+
+
+----------------
+
+mass storage disk
+
+
+gadget side:
+
+root@Evertz:/dev/shm# fdisk -lu backing_file
+
+Disk backing_file: 67 MB, 67108864 bytes
+201 heads, 1 sectors/track, 652 cylinders, total 131072 sectors
+Units = sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disk identifier: 0x8f7386c3
+
+       Device Boot      Start         End      Blocks   Id  System
+backing_file1             128      125055       62464    6  FAT16
+
+
+
+losetup -o 65536 /dev/loop		//65536=128*512
+
+mount -t vfat /dev/loop0 mnt
+
+-------------------------
+
+host side:
+
+windows storage disk management (computer management)
+
+-------------------------------------------------------------------------------------------------------------------------------
+
+ To emulate a mass storage device:
+
+    create or get a "backing storage file" (for example)
+    copy this file (uncompressed) in the /tmp directory of your board (here my Host PC has 192.168.0.20 as IP @): 
+
+ # tftp -g -r backing_file.gz -l /tmp/backing_file.gz 192.168.0.20
+ # gunzip /tmp/backing_file.gz
+
+    load g_file_storage or g_mass_storage module (depending on your Linux version): 
+
+ # modprobe g_file_storage file=/tmp/backing_file
+ 
+ g_file_storage gadget: File-backed Storage Gadget, version: 28 November 2005
+ g_file_storage gadget: Number of LUNs=1
+ g_file_storage gadget-lun0: ro=0, file: /tmp/backing_file
+ 
+-------------------------------------------------------------------------------------------------------------------------------------
+
+usbtest
+ 
+Anyway if you want to use it, just mount the deprecated /proc/bus/usb
+
+mount -t usbfs usbfs /proc/bus/usb
+
+echo 8 > /proc/sys/kernel/printk
+
+==============================================================================================================================================================================
+
+ZYNQ:
+
+------------------
+
+export CROSS_COMPILE=arm-xilinx-linux-gnueabi-
+
+------------------
+
+u-boot:
+cd ~/Zynq/u-boot-xlnx
+
+make zynq_zc70x_config
+make
+
+cd tools
+export PATH=`pwd`:$PATH
+
+------------------
+
+kernel:
+make ARCH=arm xilinx_zynq_defconfig
+make ARCH=arm menuconfig
+
+To produce the kernel image:
+
+make ARCH=arm UIMAGE_LOADADDR=0x8000 uImage
+
+------------------
+kernel 
+
+git clone git://github.com/Xilinx/linux-xlnx.git
+
+change config
+
+-CONFIG_BLK_DEV_RAM_SIZE=32768
++CONFIG_BLK_DEV_RAM_SIZE=131072
+
+-------------------
+u-boot
+
+git clone git://github.com/Xilinx/u-boot-xlnx.git
+
+setenv sdboot 'if mmcinfo; then run uenvboot; echo Copying Linux from SD to RAM... && fatload mmc 0 0x3000000 ${kernel_image} && fatload mmc 0 0x2A00000 ${devicetree_image} && fatload mmc 0 0x7000000 ${ramdisk_image} && bootm 0x3000000 0x7000000 0x2A00000; fi'
+saveenv
+-------------------
+FSBL
+
+Do you plan to use petalinux or not? If yes, use the commands below to generate FSBL for your hardware. change “../../sdk_export” to where the .hdf resides.
+
+petalinux-create -t project --template zynq -n prj_bsp
+petalinux-config --get-hw-description=../../sdk_export
+petalinux-build
+
+-------------------
+bootimage.bif
+
+the__ROM_image:
+{
+[bootloader] /export/local/fcao/Zynq/oz745_1_1_19_0/build/temp_build/zc706/zynq_fsbl.elf
+/export/local/fcao/Zynq/oz745_1_1_19_0/build/temp_build/zc706/zc706_wrapper.bit
+/export/local/fcao/Zynq/oz745_1_1_19_0/build/temp_build/zc706/u-boot.elf
+}
+
+-----------------------------
+FYI... the 3.10 kernel (Xilinx 14.7 release) now handles "raw" bit files. You don't need to use bootgen -split anymore, the driver will do the necessary conversion automatically. 
+
+-------
+(so below is just optional)
+
+/opt/Xilinx/14.7/ISE_DS/ISE/bin/lin/promgen
+
+promgen -w -b -p bin -o top.promgen.bin -u 0 top.bit -data_width 32
+
+mknod /dev/xdevcfg c 259 0
+cat /sys/devices/amba.0/f8007000.devcfg/prog_done       (if returns 1 then PL is programmed)
+cat top.bit.bin > /dev/xdevcfg
+------------------------------
+flash boot
+
+(/dev/mtd0 should start from 0x0)
+flashcp boot.bin /dev/mtd0
+
+change boot mode pin to flash
+
+-------------------
+
+Here's what I do when I want to compile a program from source and I'm not
+sure what dependencies are required.
+
+The following list isn't in any particular order:
+
+1. Do a package search with apt-cache.
+
+$ apt-cache search xf86driproto
+x11proto-xf86dri-dev - X11 DRI extension wire protocol
+
+2. Use apt-file to search for a particular config file
+(you have to install the apt-file package and then run the update to
+install its file indexes first)
+
+$ apt-file search -l gl.pc
+compiz-dev
+libegl1-mesa-dev
+libftgl-dev
+libgegl-0.0-dev
+libgl1-mesa-dev
+libmrpt-dev
+libtaoframework-ftgl-cil-dev
+libtaoframework-opengl-cil-dev
+libva-dev
+
+Since this returned multiple results, I used "apt-cache show
+<packagename>" to narrow the choices down.
+
+3. Use apt-get to install all development packages needed to build the
+version shipped with the distribution. Unless the source code has
+radically changed between versions requiring new dependencies, or newer
+versions of the same dependencies , more than likely you'll be able to
+use those same development packages to build new version you want to
+install.
+
+a. enable sources repositories in Synaptic
+b. reload packages indexes (either in Synaptic with 'Reload', or with
+"sudo apt-get update"
+c. Run "sudo apt-get build-dep <packagename>. In this case,
+
+$ sudo apt-get build-dep xorg-server
+
+4. Though I've not used it, you might want to try auto-apt which is
+supposed to be an on-demand package installation utility. So when the
+configure script tries to access a file not found on your system, but is
+found in a not yet installed package, auto-apt will go fetch and
+automatically install the needed package. Like I said, though, I've not
+used it personally, so I can't tell you how well it works. 
+-------------------
+
+build X window mouse driver
+
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/home/ubuntu/new-disk/ezsdk505/component-sources/graphics-sdk_4.04.00.02/targetfs/XSGX/lib/pkgconfig
+
+./configure --host=arm-none-linux CC=arm-none-linux-gnueabi-gcc CFLAGS="-I/home/ubuntu/new-disk/ezsdk505/component-sources/graphics-sdk_4.04.00.02/targetfs/XSGX/include/xorg -I/home/ubuntu/new-disk/ezsdk505/component-sources/graphics-sdk_4.04.00.02/targetfs/XSGX/include"
+-------------------
+
+3D utility in virtual box
+
+
+echo ${DESKTOP_SESSION}
+	ubuntu-2d
+/usr/lib/nux/unity_support_test -p
+	OpenGL Warning: Failed to connect to host. Make sure 3D acceleration is enabled for this VM.
+	OpenGL vendor string: VMware, Inc.
+	OpenGL renderer string: Gallium 0.4 on llvmpipe (LLVM 0x300)
+	OpenGL version string: 2.1 Mesa 8.0.1
+
+	Not software rendered: no
+	Not blacklisted: yes
+	GLX fbconfig: yes
+	GLX texture from pixmap: yes
+	GL npot or rect textures: yes
+	GL vertex program: yes
+	GL fragment program: yes
+	GL vertex buffer object: yes
+	GL framebuffer object: yes
+	GL version is 1.4+: yes
+
+	Unity 3D supported: no
+sudo lshw -C display
+	*-display UNCLAIMED 
+	description: VGA compatible controller
+	product: VirtualBox Graphics Adapter
+	vendor: InnoTek Systemberatung GmbH
+	physical id: 2
+	bus info: pci@0000:00:02.0
+	version: 00
+	width: 32 bits
+	clock: 33MHz
+	capabilities: vga_controller bus_master
+	configuration: latency=64
+	resources: memory:e0000000-e3ffffff
+
+But I’m sure 3D unity is currently not enabled in guest machine. So, I started 3D unity manually by following command,
+
+unity --replace
+--------------------------------
+
+
+========================================================================================================================================================
+firefox hangup
+========================================================================================================================================================
+
+0-100
+echo 0 > /proc/sys/vm/swappiness
+
+console=ttyO2,115200n8 mem=364M@0x80000000 mem=320M@0x9FC00000 earlyprintk vmalloc=500M notifyk.vpssm3_sva=0xBF900000 vram=50M ti816xfb.vram=0:16M,1:16M,2:6M ip=off
+
+console=ttyO2,115200n8 mem=364M@0x80000000 mem=320M@0x9FC00000 earlyprintk vmalloc=500M notifyk.vpssm3_sva=0xBF900000 vram=46M ti81xxfb.vram=0:24M,1:16M,2:6M ip=off
+--------------------------------
+
+###!!! ABORT: woke up from delay w/o being delayed?: 'mConnecting == CONNECTING_DELAYED', file /home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/netwerk/protocol/websocket/WebSocketChannel.cpp, line 2395
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x015CFCF8]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x015CFF48]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x015C9A10]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x01578584]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x013D1E48]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x016065D8]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x01606608]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x012BC6E0]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x010BCB50]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x002C93BC]
+UNKNOWN [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x002C9778]
+XRE_main+0x0000007C [/mnt/flashdisk/local/lib/firefox-18.0/libxul.so +0x002C9990]
+UNKNOWN [firefox +0x000022E0]
+__libc_start_main+0x00000120 [/lib/libc.so.6 +0x00014FD4]
+###!!! ABORT: woke up from delay w/o being delayed?: 'mConnecting == CONNECTING_DELAYED', file /home/ubuntu/new-disk/browser/firefox-project/ver18/mozilla-release/netwerk/protocol/websocket/WebSocketChannel.cpp, line 2395
